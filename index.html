@@ -96,6 +96,10 @@
   .sp{justify-content:space-between}
   hr{border:none;border-top:1px solid var(--line);margin:18px 0}
   .tag{font-size:11px;padding:1px 7px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+  /* demo banner */
+  .demoBanner{background:rgba(247,185,85,.12);border:1px solid var(--warn);color:var(--warn);
+    padding:11px 16px;border-radius:10px;margin-bottom:20px;font-size:13px;line-height:1.5}
+  .demoBanner a{color:var(--warn);font-weight:600;cursor:pointer;text-decoration:underline}
   /* cloud status */
   .cloud{font-size:11px;color:var(--muted);margin-bottom:8px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
   .cloud b{color:var(--txt)}
@@ -124,7 +128,10 @@
       <input type="file" id="importFile" accept="application/json" hidden>
     </div>
   </aside>
-  <main class="main" id="view"></main>
+  <main class="main">
+    <div id="demoBanner" class="demoBanner" style="display:none"></div>
+    <div id="view"></div>
+  </main>
 </div>
 
 <!-- ==== Firebase SDK (compat) ==== -->
@@ -525,6 +532,15 @@ function setCloudUI(mode){
   }else if(mode==='in'){
     el.innerHTML=`<span class="dot" style="background:var(--ok)"></span><b>Синхронизировано</b><br><span class="muted">${user.email}</span> · <a onclick="doSignOut()">выйти</a>`;
   }
+  updateDemoBanner(mode==='in');
+}
+
+function updateDemoBanner(signedIn){
+  const b=document.getElementById('demoBanner'); if(!b)return;
+  if(signedIn){b.style.display='none';return;}
+  const loginLink = cloudConfigured() ? ' <a onclick="openAuth()">Войти →</a>' : '';
+  b.style.display='block';
+  b.innerHTML=`⚠️ <b>Демо-данные.</b> То, что показано ниже — это примеры, хранятся только в этом браузере. Войдите, чтобы увидеть и синхронизировать свои данные.${loginLink}`;
 }
 
 /* ---- модалка входа ---- */
