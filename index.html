@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Planner — 4 домена</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --txt:#e7ebf3; --muted:#8b93a7; --accent:#6ea8fe;
+    --fam:#f2748b; --dev:#6ea8fe; --car:#f7b955; --self:#5ecb9e;
+    --ok:#5ecb9e; --warn:#f7b955; --bad:#f2748b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5}
+  a{color:var(--accent)}
+  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+  /* SIDEBAR */
+  .side{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+  .brand{font-weight:700;font-size:16px;margin:4px 6px 20px;display:flex;align-items:center;gap:8px}
+  .brand small{display:block;color:var(--muted);font-weight:400;font-size:11px}
+  .nav button{width:100%;text-align:left;background:none;border:none;color:var(--muted);
+    padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:10px;margin-bottom:2px}
+  .nav button:hover{background:var(--panel2);color:var(--txt)}
+  .nav button.active{background:var(--panel2);color:var(--txt);font-weight:600}
+  .nav .ico{width:20px;text-align:center}
+  .side-foot{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+  .side-foot button{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    padding:8px;border-radius:8px;cursor:pointer;font-size:12px;margin-bottom:6px}
+  .side-foot button:hover{color:var(--txt)}
+  /* MAIN */
+  .main{padding:26px 34px;max-width:1100px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 22px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:860px){.grid4{grid-template-columns:repeat(2,1fr)}.app{grid-template-columns:64px 1fr}.brand small,.nav .lbl{display:none}}
+  .dom-card{border-top:3px solid var(--c)}
+  .dom-card h3{margin:0 0 2px;font-size:15px}
+  .dom-card .cnt{color:var(--muted);font-size:12px}
+  .bar{height:7px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-top:10px}
+  .bar>i{display:block;height:100%;background:var(--c)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;color:#0f1115}
+  .badge{display:inline-block;padding:1px 8px;border-radius:6px;font-size:11px;border:1px solid var(--line);color:var(--muted)}
+  .sec-title{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:26px 0 10px;font-weight:600}
+  /* lists */
+  .item{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;margin-bottom:8px;border-left:3px solid var(--c)}
+  .item .t{flex:1}
+  .item .t small{color:var(--muted);display:block;font-size:12px}
+  .item.done .t{opacity:.5;text-decoration:line-through}
+  .chk{width:19px;height:19px;border:2px solid var(--muted);border-radius:6px;cursor:pointer;flex:0 0 auto;display:grid;place-items:center;font-size:12px;color:transparent}
+  .chk.on{background:var(--ok);border-color:var(--ok);color:#0f1115}
+  .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:6px}
+  .del:hover{color:var(--bad);background:var(--panel2)}
+  /* forms */
+  input,select,textarea{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:9px;padding:9px 11px;font-size:14px;font-family:inherit;width:100%}
+  textarea{resize:vertical;min-height:64px}
+  label{font-size:12px;color:var(--muted);display:block;margin:12px 0 5px}
+  .btn{background:var(--accent);color:#0b1220;border:none;border-radius:9px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .addbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:end}
+  .addbar>div{flex:1;min-width:120px}
+  .addbar .btn{flex:0 0 auto}
+  /* habits grid */
+  table.hb{border-collapse:collapse;width:100%}
+  table.hb th,table.hb td{padding:7px 6px;text-align:center;font-size:12px}
+  table.hb th:first-child,table.hb td:first-child{text-align:left;min-width:150px}
+  table.hb thead th{color:var(--muted);font-weight:500;border-bottom:1px solid var(--line)}
+  .cell{width:26px;height:26px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;display:inline-block}
+  .cell.on{border:none}
+  .htitle{border-left:3px solid var(--c);padding-left:9px}
+  .htitle small{color:var(--muted);display:block;font-size:11px}
+  .streak{font-size:11px;color:var(--muted)}
+  /* goals */
+  .goal{margin-bottom:14px}
+  .goal-h{display:flex;align-items:center;gap:10px}
+  .goal-h h3{margin:0;font-size:15px;flex:1}
+  .ms{list-style:none;padding:0;margin:10px 0 0}
+  .ms li{display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px dashed var(--line)}
+  .ms .chk{width:16px;height:16px}
+  .empty{color:var(--muted);text-align:center;padding:26px;border:1px dashed var(--line);border-radius:12px}
+  /* review */
+  .rev-dom{border-left:3px solid var(--c);padding:2px 0 2px 12px;margin-bottom:14px}
+  .stars{font-size:20px;letter-spacing:3px;cursor:pointer;user-select:none}
+  .stars span{color:var(--line)}
+  .stars span.on{color:var(--warn)}
+  .muted{color:var(--muted)}
+  .kpi{font-size:26px;font-weight:700}
+  .flex{display:flex;gap:10px;align-items:center}
+  .sp{justify-content:space-between}
+  hr{border:none;border-top:1px solid var(--line);margin:18px 0}
+  .tag{font-size:11px;padding:1px 7px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+  /* cloud status */
+  .cloud{font-size:11px;color:var(--muted);margin-bottom:8px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+  .cloud b{color:var(--txt)}
+  .cloud .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .cloud a{cursor:pointer;color:var(--accent);text-decoration:none}
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:50}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;width:340px;max-width:92vw}
+  .modal h2{margin:0 0 4px;font-size:18px}
+  .modal .err{color:var(--bad);font-size:12px;min-height:16px;margin-top:8px}
+  .modal .switch{font-size:12px;color:var(--muted);margin-top:12px;text-align:center}
+  .modal .switch a{color:var(--accent);cursor:pointer}
+  .modal .x{float:right;cursor:pointer;color:var(--muted);font-size:18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">🧭 <span><span class="lbl">Life Planner</span><small>4 домена жизни</small></span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <div id="cloud" class="cloud"></div>
+      <button onclick="exportData()">⬇︎ Экспорт JSON</button>
+      <button onclick="importData()">⬆︎ Импорт JSON</button>
+      <button onclick="resetDemo()">↺ Демо-данные</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </aside>
+  <main class="main" id="view"></main>
+</div>
+
+<!-- ==== Firebase SDK (compat) ==== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ▼▼▼ ВСТАВЬТЕ СЮДА КОНФИГ ИЗ FIREBASE (Project settings → Your apps → Web) ▼▼▼
+   Пока поля пустые — планировщик работает в локальном режиме (только этот браузер).
+   Как только впишете apiKey и остальное — включится вход и синхронизация. */
+const firebaseConfig = {
+  apiKey: "AIzaSyDpDKyJKxfahDy52VhWDVxtVSsmcv-XzV0",
+  authDomain: "life-planner-b8da2.firebaseapp.com",
+  projectId: "life-planner-b8da2",
+  storageBucket: "life-planner-b8da2.firebasestorage.app",
+  messagingSenderId: "533971228427",
+  appId: "1:533971228427:web:32e5c504f0a7c364d6b40e"
+};
+/* ▲▲▲ конец блока конфига ▲▲▲ */
+</script>
+
+<script>
+/* ============ МОДЕЛЬ ДАННЫХ ============ */
+const DOMAINS = [
+  {id:'fam',  name:'Я и семья',        emoji:'❤️', color:'var(--fam)',  target:25},
+  {id:'dev',  name:'Я и развитие',     emoji:'📚', color:'var(--dev)',  target:25},
+  {id:'car',  name:'Я и карьера',      emoji:'💼', color:'var(--car)',  target:25},
+  {id:'self', name:'Я и забота о себе',emoji:'🌿', color:'var(--self)', target:25},
+];
+const dom = id => DOMAINS.find(d=>d.id===id);
+const KEY = 'lifeplanner.v1';
+// локально-безопасное форматирование YYYY-MM-DD (без UTC-сдвига)
+const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayISO = () => fmt(new Date());
+const uid = () => Math.random().toString(36).slice(2,9);
+
+// начало недели (понедельник) для даты — считаем в локальных компонентах
+function weekStart(d=new Date()){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day);
+  return fmt(x);
+}
+function weekDates(startISO){
+  const [y,m,dd]=startISO.split('-').map(Number);
+  const s=new Date(y,m-1,dd); const out=[];
+  for(let i=0;i<7;i++){const d=new Date(s);d.setDate(s.getDate()+i);out.push(fmt(d));}
+  return out;
+}
+const RUDAY=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+let state = load();
+
+function load(){
+  const raw = localStorage.getItem(KEY);
+  if(raw){try{return JSON.parse(raw)}catch(e){}}
+  return demo();
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));cloudSave();}
+
+function demo(){
+  return {
+    goals:[
+      {id:'g1',domainId:'dev',title:'Прочитать 12 книг за год',why:'Расширять кругозор и мышление',target:'2026-12-31',
+        milestones:[{id:uid(),t:'Составить список книг',done:true},{id:uid(),t:'Читать 20 стр/день',done:false},{id:uid(),t:'Вести заметки по каждой',done:false}]},
+      {id:'g2',domainId:'car',title:'Получить повышение / новую роль',why:'Рост дохода и ответственности',target:'2026-10-01',
+        milestones:[{id:uid(),t:'Собрать портфолио проектов',done:false},{id:uid(),t:'Пройти 2 профильных курса',done:false}]},
+      {id:'g3',domainId:'self',title:'Пробежать полумарафон',why:'Здоровье и дисциплина',target:'2026-09-15',
+        milestones:[{id:uid(),t:'База 5 км без остановки',done:true},{id:uid(),t:'Выйти на 10 км',done:false}]},
+      {id:'g4',domainId:'fam',title:'Еженедельный семейный вечер',why:'Больше близости с семьёй',target:'2026-12-31',milestones:[]},
+    ],
+    tasks:[
+      {id:uid(),domainId:'dev',goalId:'g1',title:'Дочитать главу 4',done:false,date:todayISO(),prio:'med'},
+      {id:uid(),domainId:'car',goalId:'g2',title:'Обновить резюме',done:false,date:todayISO(),prio:'high'},
+      {id:uid(),domainId:'fam',goalId:'g4',title:'Забронировать столик на пятницу',done:true,date:todayISO(),prio:'med'},
+      {id:uid(),domainId:'self',goalId:'g3',title:'Пробежка 6 км',done:false,date:todayISO(),prio:'med'},
+      {id:uid(),domainId:'car',goalId:null,title:'Ответить на письма',done:false,date:todayISO(),prio:'low'},
+    ],
+    habits:[
+      {id:uid(),domainId:'dev', title:'Чтение 20 минут', targetPerWeek:6, log:{}},
+      {id:uid(),domainId:'self',title:'Спорт / зарядка',  targetPerWeek:4, log:{}},
+      {id:uid(),domainId:'self',title:'Сон до 23:30',      targetPerWeek:7, log:{}},
+      {id:uid(),domainId:'fam', title:'Час без телефона с семьёй',targetPerWeek:5, log:{}},
+      {id:uid(),domainId:'car', title:'Глубокая работа 90 мин',   targetPerWeek:5, log:{}},
+    ],
+    reviews:[],
+  };
+}
+
+/* ============ РОУТИНГ ============ */
+const PAGES=[
+  {id:'dash',   ico:'🏠', label:'Дашборд'},
+  {id:'tasks',  ico:'✓',  label:'Задачи'},
+  {id:'habits', ico:'🔁', label:'Привычки'},
+  {id:'goals',  ico:'🎯', label:'Цели'},
+  {id:'review', ico:'🪞', label:'Обзор недели'},
+];
+let page='dash';
+function renderNav(){
+  document.getElementById('nav').innerHTML = PAGES.map(p=>
+    `<button class="${p.id===page?'active':''}" onclick="go('${p.id}')"><span class="ico">${p.ico}</span><span class="lbl">${p.label}</span></button>`).join('');
+}
+function go(p){page=p;render();}
+function render(){renderNav();({dash:vDash,tasks:vTasks,habits:vHabits,goals:vGoals,review:vReview}[page])();}
+
+/* ============ ДАШБОРД ============ */
+function domActiveCount(id){
+  const t=state.tasks.filter(x=>x.domainId===id&&!x.done).length;
+  const h=state.habits.filter(x=>x.domainId===id).length;
+  const g=state.goals.filter(x=>x.domainId===id).length;
+  return {t,h,g,total:t+h+g};
+}
+function balance(){
+  // доля выполненных на этой неделе действий по доменам (задачи done + отметки привычек)
+  const wd=weekDates(weekStart());
+  const score={}; let sum=0;
+  DOMAINS.forEach(d=>{
+    let s=state.tasks.filter(t=>t.domainId===d.id&&t.done&&wd.includes(t.date)).length;
+    state.habits.filter(h=>h.domainId===d.id).forEach(h=>{wd.forEach(dt=>{if(h.log[dt])s++;});});
+    score[d.id]=s; sum+=s;
+  });
+  return {score,sum};
+}
+function vDash(){
+  const {score,sum}=balance();
+  const cards=DOMAINS.map(d=>{
+    const c=domActiveCount(d.id);
+    const share = sum? Math.round(score[d.id]/sum*100):0;
+    return `<div class="card dom-card" style="--c:${d.color}">
+      <h3>${d.emoji} ${d.name}</h3>
+      <div class="cnt">${c.g} целей · ${c.t} задач · ${c.h} привычек</div>
+      <div class="bar"><i style="width:${share}%"></i></div>
+      <div class="cnt" style="margin-top:6px">Активность недели: <b>${share}%</b> <span class="muted">(цель ~${d.target}%)</span></div>
+    </div>`;
+  }).join('');
+
+  const today=state.tasks.filter(t=>t.date===todayISO());
+  const doneToday=today.filter(t=>t.done).length;
+
+  const alerts=DOMAINS.filter(d=>{const sh=sum?score[d.id]/sum*100:0;return sh < d.target-12;})
+    .map(d=>`<span class="badge" style="border-color:${d.color};color:${d.color}">${d.emoji} ${d.name} проседает</span>`).join(' ');
+
+  document.getElementById('view').innerHTML=`
+    <h1>Дашборд</h1>
+    <p class="sub">${new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})} · баланс четырёх доменов</p>
+    <div class="grid4">${cards}</div>
+
+    <div class="row" style="margin-top:18px">
+      <div class="card" style="flex:1;min-width:240px">
+        <div class="flex sp"><span class="muted">Задачи на сегодня</span><span class="kpi">${doneToday}/${today.length}</span></div>
+        <div class="bar" style="--c:var(--dev)"><i style="width:${today.length?doneToday/today.length*100:0}%"></i></div>
+      </div>
+      <div class="card" style="flex:1;min-width:240px">
+        <div class="muted" style="margin-bottom:8px">Баланс недели</div>
+        ${alerts||'<span class="badge" style="border-color:var(--ok);color:var(--ok)">✓ Домены в равновесии</span>'}
+      </div>
+    </div>
+
+    <div class="sec-title">Фокус на сегодня</div>
+    ${today.length? today.map(taskRow).join(''):'<div class="empty">На сегодня задач нет — загляните в раздел «Задачи».</div>'}
+  `;
+}
+
+/* ============ ЗАДАЧИ ============ */
+let taskFilter='all';
+function taskRow(t){
+  const d=dom(t.domainId);
+  const prio={high:'🔴',med:'🟡',low:'⚪'}[t.prio]||'';
+  const g=t.goalId?state.goals.find(x=>x.id===t.goalId):null;
+  return `<div class="item ${t.done?'done':''}" style="--c:${d.color}">
+    <div class="chk ${t.done?'on':''}" onclick="toggleTask('${t.id}')">✓</div>
+    <div class="t">${t.title}
+      <small>${d.emoji} ${d.name}${g?` · 🎯 ${g.title}`:''} · ${prio} ${t.date}</small></div>
+    <button class="del" onclick="delTask('${t.id}')">✕</button>
+  </div>`;
+}
+function vTasks(){
+  const list = taskFilter==='all'?state.tasks:state.tasks.filter(t=>t.domainId===taskFilter);
+  const open=list.filter(t=>!t.done), done=list.filter(t=>t.done);
+  const filterBtns = [['all','Все']].concat(DOMAINS.map(d=>[d.id,d.emoji+' '+d.name]))
+    .map(([id,l])=>`<button class="btn ${taskFilter===id?'':'ghost'}" style="padding:6px 12px;font-size:12px" onclick="setTF('${id}')">${l}</button>`).join(' ');
+  document.getElementById('view').innerHTML=`
+    <h1>Задачи</h1>
+    <p class="sub">Каждая задача привязана к домену — ничего не теряется в общей массе.</p>
+    <div class="addbar">
+      <div style="flex:2"><label>Задача</label><input id="tTitle" placeholder="Что нужно сделать?"></div>
+      <div><label>Домен</label><select id="tDom">${DOMAINS.map(d=>`<option value="${d.id}">${d.emoji} ${d.name}</option>`).join('')}</select></div>
+      <div><label>Цель</label><select id="tGoal"><option value="">— без цели —</option>${state.goals.map(g=>`<option value="${g.id}">${g.title}</option>`).join('')}</select></div>
+      <div><label>Приоритет</label><select id="tPrio"><option value="high">🔴 Высокий</option><option value="med" selected>🟡 Средний</option><option value="low">⚪ Низкий</option></select></div>
+      <div><label>Дата</label><input type="date" id="tDate" value="${todayISO()}"></div>
+      <button class="btn" onclick="addTask()">Добавить</button>
+    </div>
+    <div style="margin-bottom:14px">${filterBtns}</div>
+    <div class="sec-title">Активные · ${open.length}</div>
+    ${open.length?open.map(taskRow).join(''):'<div class="empty">Нет активных задач.</div>'}
+    ${done.length?`<div class="sec-title">Выполнено · ${done.length}</div>${done.map(taskRow).join('')}`:''}
+  `;
+}
+function setTF(id){taskFilter=id;vTasks();}
+function addTask(){
+  const t=document.getElementById('tTitle').value.trim(); if(!t)return;
+  state.tasks.push({id:uid(),title:t,domainId:document.getElementById('tDom').value,
+    goalId:document.getElementById('tGoal').value||null,prio:document.getElementById('tPrio').value,
+    date:document.getElementById('tDate').value||todayISO(),done:false});
+  save();vTasks();
+}
+function toggleTask(id){const t=state.tasks.find(x=>x.id===id);t.done=!t.done;save();render();}
+function delTask(id){state.tasks=state.tasks.filter(x=>x.id!==id);save();vTasks();}
+
+/* ============ ПРИВЫЧКИ ============ */
+function weekChecks(h,wd){return wd.filter(d=>h.log[d]).length;}
+function vHabits(){
+  const wd=weekDates(weekStart());
+  const head=`<tr><th>Привычка</th>${wd.map((d,i)=>`<th>${RUDAY[i]}<br><span class="muted">${d.slice(8)}</span></th>`).join('')}<th>Итог</th></tr>`;
+  const rows=state.habits.map(h=>{
+    const d=dom(h.domainId); const done=weekChecks(h,wd);
+    const cells=wd.map(dt=>`<td><span class="cell ${h.log[dt]?'on':''}" style="${h.log[dt]?`background:${d.color}`:''}" onclick="toggleHabit('${h.id}','${dt}')"></span></td>`).join('');
+    return `<tr>
+      <td><div class="htitle" style="--c:${d.color}">${h.title}<small>${d.emoji} ${d.name} · цель ${h.targetPerWeek}/нед</small></div></td>
+      ${cells}
+      <td><b style="color:${done>=h.targetPerWeek?'var(--ok)':'var(--txt)'}">${done}/${h.targetPerWeek}</b>
+        <button class="del" onclick="delHabit('${h.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('view').innerHTML=`
+    <h1>Привычки</h1>
+    <p class="sub">Каждая привычка закреплена за доменом. Отмечайте дни недели — цвет = домен.</p>
+    <div class="addbar">
+      <div style="flex:2"><label>Привычка</label><input id="hTitle" placeholder="Напр. Чтение 20 минут"></div>
+      <div><label>Домен</label><select id="hDom">${DOMAINS.map(d=>`<option value="${d.id}">${d.emoji} ${d.name}</option>`).join('')}</select></div>
+      <div><label>Раз в неделю</label><input type="number" id="hTarget" min="1" max="7" value="5"></div>
+      <button class="btn" onclick="addHabit()">Добавить</button>
+    </div>
+    <div class="card" style="overflow:auto"><table class="hb"><thead>${head}</thead><tbody>${rows||''}</tbody></table></div>
+    ${state.habits.length?'':'<div class="empty" style="margin-top:12px">Пока нет привычек.</div>'}
+  `;
+}
+function addHabit(){
+  const t=document.getElementById('hTitle').value.trim(); if(!t)return;
+  state.habits.push({id:uid(),title:t,domainId:document.getElementById('hDom').value,
+    targetPerWeek:+document.getElementById('hTarget').value||5,log:{}});
+  save();vHabits();
+}
+function toggleHabit(id,dt){const h=state.habits.find(x=>x.id===id);if(h.log[dt])delete h.log[dt];else h.log[dt]=true;save();vHabits();}
+function delHabit(id){state.habits=state.habits.filter(x=>x.id!==id);save();vHabits();}
+
+/* ============ ЦЕЛИ ============ */
+function vGoals(){
+  const byDom=DOMAINS.map(d=>{
+    const gs=state.goals.filter(g=>g.domainId===d.id);
+    const goalsHtml=gs.map(g=>{
+      const tot=g.milestones.length, dn=g.milestones.filter(m=>m.done).length;
+      const pct=tot?Math.round(dn/tot*100):0;
+      const ms=g.milestones.map(m=>`<li>
+        <div class="chk ${m.done?'on':''}" onclick="toggleMs('${g.id}','${m.id}')">✓</div>
+        <span style="flex:1;${m.done?'opacity:.5;text-decoration:line-through':''}">${m.t}</span>
+        <button class="del" onclick="delMs('${g.id}','${m.id}')">✕</button></li>`).join('');
+      return `<div class="card goal" style="--c:${d.color}">
+        <div class="goal-h"><h3>${g.title}</h3><span class="badge">до ${g.target||'—'}</span>
+          <button class="del" onclick="delGoal('${g.id}')">✕</button></div>
+        ${g.why?`<div class="muted" style="font-size:12px">Зачем: ${g.why}</div>`:''}
+        <div class="bar" style="--c:${d.color};margin-top:10px"><i style="width:${pct}%"></i></div>
+        <div class="muted" style="font-size:12px;margin-top:5px">Прогресс по вехам: ${dn}/${tot} (${pct}%)</div>
+        <ul class="ms">${ms}</ul>
+        <div class="flex" style="margin-top:10px">
+          <input id="ms-${g.id}" placeholder="Новая веха / недельное действие" onkeydown="if(event.key==='Enter')addMs('${g.id}')">
+          <button class="btn ghost" onclick="addMs('${g.id}')">+ Веха</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="border-left:3px solid ${d.color};padding-left:14px;margin-bottom:22px">
+      <div class="sec-title" style="margin-top:0;color:${d.color}">${d.emoji} ${d.name}</div>
+      ${goalsHtml||'<div class="empty">Нет целей в этом домене.</div>'}
+    </div>`;
+  }).join('');
+  document.getElementById('view').innerHTML=`
+    <h1>Цели</h1>
+    <p class="sub">Долгосрочная цель → вехи → недельные действия. Ставьте цель в каждый домен для баланса.</p>
+    <div class="addbar">
+      <div style="flex:2"><label>Цель</label><input id="gTitle" placeholder="Чего хотите достичь?"></div>
+      <div><label>Домен</label><select id="gDom">${DOMAINS.map(d=>`<option value="${d.id}">${d.emoji} ${d.name}</option>`).join('')}</select></div>
+      <div style="flex:1.5"><label>Зачем (мотивация)</label><input id="gWhy" placeholder="Почему это важно"></div>
+      <div><label>Срок</label><input type="date" id="gTarget"></div>
+      <button class="btn" onclick="addGoal()">Добавить</button>
+    </div>
+    ${byDom}
+  `;
+}
+function addGoal(){
+  const t=document.getElementById('gTitle').value.trim(); if(!t)return;
+  state.goals.push({id:uid(),title:t,domainId:document.getElementById('gDom').value,
+    why:document.getElementById('gWhy').value.trim(),target:document.getElementById('gTarget').value,milestones:[]});
+  save();vGoals();
+}
+function delGoal(id){state.goals=state.goals.filter(g=>g.id!==id);save();vGoals();}
+function addMs(gid){const i=document.getElementById('ms-'+gid);const v=i.value.trim();if(!v)return;
+  state.goals.find(g=>g.id===gid).milestones.push({id:uid(),t:v,done:false});save();vGoals();}
+function toggleMs(gid,mid){const m=state.goals.find(g=>g.id===gid).milestones.find(x=>x.id===mid);m.done=!m.done;save();vGoals();}
+function delMs(gid,mid){const g=state.goals.find(g=>g.id===gid);g.milestones=g.milestones.filter(m=>m.id!==mid);save();vGoals();}
+
+/* ============ ОБЗОР НЕДЕЛИ ============ */
+function getReview(ws){let r=state.reviews.find(x=>x.weekStart===ws);
+  if(!r){r={weekStart:ws,perDomain:{},notes:''};DOMAINS.forEach(d=>r.perDomain[d.id]={score:0,wins:'',blockers:'',next:''});state.reviews.push(r);}
+  // гарантируем наличие всех доменов
+  DOMAINS.forEach(d=>{if(!r.perDomain[d.id])r.perDomain[d.id]={score:0,wins:'',blockers:'',next:''};});
+  return r;}
+function vReview(){
+  const ws=weekStart(); const r=getReview(ws); const wd=weekDates(ws);
+  const doms=DOMAINS.map(d=>{
+    const pd=r.perDomain[d.id];
+    // авто-статистика
+    const tDone=state.tasks.filter(t=>t.domainId===d.id&&t.done&&wd.includes(t.date)).length;
+    let hDone=0,hTgt=0;state.habits.filter(h=>h.domainId===d.id).forEach(h=>{hTgt+=h.targetPerWeek;hDone+=weekChecks(h,wd);});
+    const stars=[1,2,3,4,5].map(n=>`<span class="${n<=pd.score?'on':''}" onclick="setScore('${ws}','${d.id}',${n})">★</span>`).join('');
+    return `<div class="rev-dom" style="--c:${d.color}">
+      <div class="flex sp"><b>${d.emoji} ${d.name}</b><div class="stars">${stars}</div></div>
+      <div class="muted" style="font-size:12px;margin:4px 0 8px">Авто: задач ✓ ${tDone} · привычки ${hDone}/${hTgt}</div>
+      <label>Победы недели</label><textarea onchange="setRev('${ws}','${d.id}','wins',this.value)" placeholder="Что удалось?">${pd.wins||''}</textarea>
+      <label>Что мешало</label><textarea onchange="setRev('${ws}','${d.id}','blockers',this.value)" placeholder="Препятствия, помехи">${pd.blockers||''}</textarea>
+      <label>Фокус на след. неделю (1 действие)</label><textarea onchange="setRev('${ws}','${d.id}','next',this.value)" placeholder="Одно конкретное действие">${pd.next||''}</textarea>
+    </div>`;
+  }).join('');
+  const avg = (DOMAINS.reduce((s,d)=>s+(r.perDomain[d.id].score||0),0)/4).toFixed(1);
+  document.getElementById('view').innerHTML=`
+    <h1>Обзор недели</h1>
+    <p class="sub">Неделя с ${ws} · рефлексия по всем четырём доменам. Средняя оценка: <b>${avg}/5</b></p>
+    ${doms}
+    <div class="card" style="margin-top:6px">
+      <label>Общие мысли, благодарности, инсайты</label>
+      <textarea onchange="setNotes('${ws}',this.value)" placeholder="Итог недели одним абзацем">${r.notes||''}</textarea>
+    </div>
+    <div style="margin-top:14px"><button class="btn" onclick="save();alert('Обзор сохранён ✓')">Сохранить обзор</button></div>
+  `;
+}
+function setScore(ws,did,n){getReview(ws).perDomain[did].score=n;save();vReview();}
+function setRev(ws,did,f,v){getReview(ws).perDomain[did][f]=v;save();}
+function setNotes(ws,v){getReview(ws).notes=v;save();}
+
+/* ============ ДАННЫЕ ============ */
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='life-planner-'+todayISO()+'.json';a.click();
+}
+function importData(){document.getElementById('importFile').click();}
+document.getElementById('importFile').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{state=JSON.parse(r.result);save();render();alert('Импортировано ✓');}catch(err){alert('Ошибка файла');}};
+  r.readAsText(f);
+});
+function resetDemo(){if(confirm('Заменить всё демо-данными?')){state=demo();save();render();}}
+
+/* ============ ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ (Firebase) ============ */
+let auth=null, db=null, user=null, unsub=null, saveTimer=null;
+
+function cloudConfigured(){return typeof firebaseConfig!=='undefined' && firebaseConfig.apiKey && firebaseConfig.projectId;}
+
+function cloudInit(){
+  if(!cloudConfigured()){setCloudUI('local');return;}
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    auth=firebase.auth(); db=firebase.firestore();
+    auth.onAuthStateChanged(u=>{
+      user=u;
+      if(u){setCloudUI('in');cloudListen();}
+      else{setCloudUI('out'); if(unsub){unsub();unsub=null;}}
+    });
+  }catch(e){console.warn('Firebase init:',e);setCloudUI('local');}
+}
+
+function cloudListen(){
+  if(unsub){unsub();}
+  unsub=db.collection('planners').doc(user.uid).onSnapshot(snap=>{
+    if(snap.metadata.hasPendingWrites) return;      // это наш собственный write — пропускаем
+    if(snap.exists && snap.data().data){
+      state=snap.data().data;
+      localStorage.setItem(KEY,JSON.stringify(state));
+      render();
+    }else{
+      cloudSave(true);                               // документа ещё нет — заливаем локальные данные
+    }
+  },err=>console.warn('Firestore:',err));
+}
+
+function cloudSave(now){
+  if(!user||!db) return;
+  clearTimeout(saveTimer);
+  const push=()=>db.collection('planners').doc(user.uid)
+    .set({data:state,updated:Date.now()}).catch(e=>console.warn('save:',e));
+  now ? push() : (saveTimer=setTimeout(push,700));
+}
+
+function setCloudUI(mode){
+  const el=document.getElementById('cloud'); if(!el)return;
+  if(mode==='local'){
+    el.innerHTML=`<span class="dot" style="background:var(--muted)"></span><b>Локальный режим</b><br>Данные только в этом браузере. Впишите конфиг Firebase для синхронизации.`;
+  }else if(mode==='out'){
+    el.innerHTML=`<span class="dot" style="background:var(--warn)"></span><b>Не выполнен вход</b><br><a onclick="openAuth()">Войти для синхронизации →</a>`;
+  }else if(mode==='in'){
+    el.innerHTML=`<span class="dot" style="background:var(--ok)"></span><b>Синхронизировано</b><br><span class="muted">${user.email}</span> · <a onclick="doSignOut()">выйти</a>`;
+  }
+}
+
+/* ---- модалка входа ---- */
+let authMode='in';
+function openAuth(){
+  authMode='in';
+  const m=document.createElement('div');m.className='modal';m.id='authModal';
+  m.innerHTML=`<div class="box">
+    <span class="x" onclick="closeAuth()">✕</span>
+    <h2 id="aTitle">Вход</h2>
+    <p class="muted" style="font-size:12px;margin:0 0 14px">Один аккаунт — данные на всех устройствах.</p>
+    <label>Email</label><input id="aEmail" type="email" autocomplete="username" placeholder="you@mail.com">
+    <label>Пароль</label><input id="aPass" type="password" autocomplete="current-password" placeholder="минимум 6 символов">
+    <div class="err" id="aErr"></div>
+    <button class="btn" style="width:100%;margin-top:12px" id="aBtn" onclick="doAuth()">Войти</button>
+    <div style="text-align:center;color:var(--muted);font-size:11px;margin:12px 0">— или —</div>
+    <button class="btn ghost" style="width:100%" onclick="doGoogle()">🔵 Войти через Google</button>
+    <div class="muted" style="font-size:10px;margin-top:6px;text-align:center">Google работает на задеплоенном сайте или localhost, не из локального файла.</div>
+    <div class="switch" id="aSwitch">Нет аккаунта? <a onclick="toggleAuth()">Зарегистрироваться</a></div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m)closeAuth();});
+}
+function closeAuth(){const m=document.getElementById('authModal');if(m)m.remove();}
+function toggleAuth(){
+  authMode = authMode==='in'?'up':'in';
+  document.getElementById('aTitle').textContent = authMode==='in'?'Вход':'Регистрация';
+  document.getElementById('aBtn').textContent   = authMode==='in'?'Войти':'Создать аккаунт';
+  document.getElementById('aSwitch').innerHTML  = authMode==='in'
+    ? 'Нет аккаунта? <a onclick="toggleAuth()">Зарегистрироваться</a>'
+    : 'Уже есть аккаунт? <a onclick="toggleAuth()">Войти</a>';
+}
+function doAuth(){
+  const email=document.getElementById('aEmail').value.trim();
+  const pass=document.getElementById('aPass').value;
+  const err=document.getElementById('aErr'); err.textContent='';
+  const p = authMode==='in'
+    ? auth.signInWithEmailAndPassword(email,pass)
+    : auth.createUserWithEmailAndPassword(email,pass);
+  p.then(()=>closeAuth()).catch(e=>{err.textContent=humanErr(e.code)||e.message;});
+}
+function doGoogle(){
+  const err=document.getElementById('aErr'); if(err)err.textContent='';
+  const provider=new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).then(()=>closeAuth())
+    .catch(e=>{if(err)err.textContent=humanErr(e.code)||e.message;});
+}
+function doSignOut(){if(auth)auth.signOut();}
+function humanErr(c){return{
+  'auth/invalid-email':'Некорректный email',
+  'auth/missing-password':'Введите пароль',
+  'auth/weak-password':'Пароль слишком короткий (мин. 6 символов)',
+  'auth/email-already-in-use':'Email уже зарегистрирован — войдите',
+  'auth/invalid-credential':'Неверный email или пароль',
+  'auth/wrong-password':'Неверный пароль',
+  'auth/user-not-found':'Аккаунт не найден — зарегистрируйтесь'
+}[c]||'';}
+
+/* старт */
+render();
+cloudInit();
+</script>
+</body>
+</html>
